@@ -1,4 +1,4 @@
-package main
+package old
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+
+	"github.com/sergivb01/unfurl-worker/cmd"
 )
 
 const compressAlgo string = "gzip, br, bzip2, deflate"
@@ -18,7 +20,7 @@ func getAttribute(el *goquery.Selection) (string, bool) {
 }
 
 func extractFromReader(reader io.ReadCloser) (*Metatags, error) {
-	defer BenchmarkFunction(time.Now(), "extractFromReader(io.ReadCloser)")
+	defer main.BenchmarkFunction(time.Now(), "extractFromReader(io.ReadCloser)")
 	defer reader.Close()
 
 	doc, err := goquery.NewDocumentFromReader(reader)

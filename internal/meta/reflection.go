@@ -1,32 +1,14 @@
-package main
+package meta
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 )
 
-var cache map[string]string
+var internalReflectionCache = make(map[string]string)
 
-type MetaTest struct {
-	Title   string `name:"title"`
-	Twitter struct {
-		Description string `name:"og:description"`
-	}
-}
-
-func test() {
-	cache = make(map[string]string)
-	registerCache(&MetaTest{}, "")
-	for name, f := range cache {
-		fmt.Printf("(%s) %s\n", name, f)
-	}
-	test := &MetaTest{}
-	test.updateField("title", "titleee")
-	fmt.Printf("1 -> %+v\n", test)
-
-	test.updateField("og:description", "test123")
-	fmt.Printf("2 -> %+v\n", test)
+func init() {
+	registerCache(&PageInfo{}, "")
 }
 
 func registerCache(data interface{}, baseName string) {
@@ -53,41 +35,38 @@ func registerCache(data interface{}, baseName string) {
 			if fv.IsNil() {
 				fv.Set(reflect.New(fv.Type().Elem()))
 			}
-			registerCache(fv, "")
+			registerCache(fv, field.Name+"-")
+		case reflect.Slice:
+			// TODO: implement slices for Images, Videos and Audios
+			break
 		case reflect.Struct:
 			registerCache(fv.Addr(), field.Name+"-")
 		case reflect.String:
-			tag, ok := field.Tag.Lookup("name")
+			tag, ok := field.Tag.Lookup("meta")
 			if !ok || tag == "-" {
 				continue
 			}
 
 			for _, t := range strings.Split(tag, ",") {
-				cache[t] = baseName + field.Name
-				fmt.Printf("added %s from %q\n", t, baseName+field.Name)
+				internalReflectionCache[t] = baseName + field.Name
+				// fmt.Printf("added %s from %q\n", t, baseName+field.Name)
 			}
 		}
 	}
 }
 
-func (m *MetaTest) updateField(name, value string) {
-	args, ok := cache[name]
+func (m *PageInfo) updateField(name, value string) {
+	args, ok := internalReflectionCache[name]
 	if !ok {
-		fmt.Printf("%q does not exist in cache\n", name)
 		return
 	}
-
 	updateField(reflect.ValueOf(m).Elem(), strings.Split(args, "-"), value)
 }
 
 func updateField(v reflect.Value, args []string, value string) {
-	// fmt.Printf("called updateField with %T type and %s args\n", v, args)
 	if len(args) > 1 {
-		// fmt.Printf("    args > 1 for %s (%s) in type %T\n", args, value, v)
 		updateField(v.FieldByName(args[0]), args[1:], value)
 		return
 	}
-	// fmt.Println("should now be updating", args, value)
-
 	v.FieldByName(args[0]).SetString(value)
 }

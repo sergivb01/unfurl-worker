@@ -1,4 +1,4 @@
-package main
+package old
 
 import (
 	"errors"
@@ -39,7 +39,7 @@ type OGTwitter struct {
 	TwitterPlayer   string `name:"twitter:player"`
 }
 
-func init() {
+func inita() {
 	v := reflect.ValueOf(&Metatags{}).Elem()
 	tagCache = make(map[string]int, v.NumField())
 
