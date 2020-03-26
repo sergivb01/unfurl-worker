@@ -1,11 +1,15 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 )
 
 var tagCache map[string]int
+
+var ErrorType = errors.New("should not be non-ptr or nil")
 
 /**
  * TODO:
@@ -25,6 +29,10 @@ type Metatags struct {
 	OGVideo  string `name:"og:video"`
 	OGType   string `name:"og:type"`
 
+	Twitter *OGTwitter
+}
+
+type OGTwitter struct {
 	TwitterCard     string `name:"twitter:card"`
 	TwitterImage    string `name:"twitter:image"`
 	TwitterImageAlt string `name:"twitter:image:alt"`
@@ -44,16 +52,18 @@ func init() {
 
 		for _, str := range strings.Split(tag, ",") {
 			tagCache[strings.TrimSpace(str)] = i
+			fmt.Printf("registered %s\n", strings.TrimSpace(str))
 		}
 	}
 }
+
 
 func (m *Metatags) updateField(name, value string) {
 	v := reflect.ValueOf(m).Elem()
 
 	tagIdx, ok := tagCache[name]
 	if !ok || v.Field(tagIdx).String() != "" {
-		// fmt.Println("ignoring " + name)
+		fmt.Println("ignoring " + name)
 		return
 	}
 	v.Field(tagIdx).SetString(value)
