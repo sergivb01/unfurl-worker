@@ -80,10 +80,6 @@ func main() {
 }
 
 func sendMessage(nc *nats.EncodedConn) {
-	fmt.Println("sleeping 3s")
-	time.Sleep(time.Second * 3)
-	fmt.Println("sending")
-
 	start := time.Now()
 
 	var info meta.PageInfo
@@ -93,5 +89,5 @@ func sendMessage(nc *nats.EncodedConn) {
 	}
 	fmt.Printf("response: %v\n", info)
 
-	fmt.Printf("took %s to receive message", time.Since(start))
+	fmt.Printf("took %s to receive message\n", time.Since(start))
 }
