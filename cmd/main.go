@@ -41,15 +41,16 @@ func main() {
 
 		reader, err := metaclient.GetReaderFromURL(context.TODO(), r.URL, true)
 		if err != nil {
-			panic(err)
+			log.Printf("error getting reader from URL: %s", err)
 		}
 
-		info, _ := meta.ExtractInfoFromReader(reader)
-
-		fmt.Printf("responding with:\n%s\n", info)
+		info, err := meta.ExtractInfoFromReader(reader)
+		if err != nil {
+			log.Printf("error extracting meta from the reader: %s", err)
+		}
 
 		if err := c.Publish(reply, info); err != nil {
-			log.Printf("failed to reply: %s", err)
+			log.Printf("error replying: %s", err)
 		}
 	})
 
