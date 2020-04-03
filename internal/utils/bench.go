@@ -1,10 +1,13 @@
 package utils
 
 import (
-	"fmt"
 	"time"
 )
 
-func BenchmarkFunction(start time.Time, name string) {
-	fmt.Printf("[%s] took %s to finish!\n", name, time.Since(start))
+func BenchFunc(s string) (string, time.Time) {
+	return s, time.Now()
+}
+
+func Track(name string, start time.Time) {
+	// fmt.Printf("[%s] took %s to finish!\n", name, time.Since(start))
 }

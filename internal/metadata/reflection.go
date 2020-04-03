@@ -1,4 +1,4 @@
-package meta
+package metadata
 
 import (
 	"reflect"
@@ -42,14 +42,13 @@ func registerCache(data interface{}, baseName string) {
 		case reflect.Struct:
 			registerCache(fv.Addr(), field.Name+"-")
 		case reflect.String:
-			tag, ok := field.Tag.Lookup("meta")
+			tag, ok := field.Tag.Lookup("metadata")
 			if !ok || tag == "-" {
 				continue
 			}
 
 			for _, t := range strings.Split(tag, ",") {
 				internalReflectionCache[t] = baseName + field.Name
-				// fmt.Printf("added %s from %q\n", t, baseName+field.Name)
 			}
 		}
 	}
@@ -63,10 +62,23 @@ func (m *PageInfo) updateField(name, value string) {
 	updateField(reflect.ValueOf(m).Elem(), strings.Split(args, "-"), value)
 }
 
-func updateField(v reflect.Value, args []string, value string) {
+func updateField(v reflect.Value, args []string, value interface{}) {
 	if len(args) > 1 {
 		updateField(v.FieldByName(args[0]), args[1:], value)
 		return
 	}
-	v.FieldByName(args[0]).SetString(value)
+
+	field := v.FieldByName(args[0])
+	switch field.Type().Kind() {
+	case reflect.String:
+		field.SetString(value.(string))
+		break
+	case reflect.Int:
+		field.SetInt(value.(int64))
+		break
+	default:
+		// TODO: field not supported, could log?
+		break
+	}
+	// v.FieldByName(args[0]).SetString(value)
 }

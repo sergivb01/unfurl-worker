@@ -1,4 +1,4 @@
-package metaclient
+package httpclient
 
 import (
 	"context"
@@ -17,19 +17,23 @@ const compressAlgo string = "gzip, br, bzip2, deflate"
 var client = &http.Client{Transport: &http.Transport{
 	DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, err error) {
 		dialer := &net.Dialer{
-			Timeout: time.Duration(3) * time.Second,
+			Timeout: 3 * time.Second,
 		}
 		return dialer.DialContext(ctx, network, addr)
 	},
 	TLSHandshakeTimeout: 3 * time.Second,
-	MaxIdleConns:        150,
-	MaxIdleConnsPerHost: 150,
+	// MaxIdleConns:        150,
+	// MaxIdleConnsPerHost: 150,
+	MaxIdleConns:        -1,
+	MaxIdleConnsPerHost: -1,
 	DisableKeepAlives:   true,
 	ForceAttemptHTTP2:   true,
 }}
 
+// GetReaderFromURL returns the corresponding io.ReadCloser from a website
+// according to the response type for compression
 func GetReaderFromURL(ctx context.Context, urlAddress string, enableCompression bool) (io.ReadCloser, error) {
-	defer utils.BenchmarkFunction(time.Now(), "getReaderFromURL(ctx, "+urlAddress+")")
+	defer utils.Track(utils.BenchFunc("getReaderFromURL(ctx, " + urlAddress + ")"))
 	parsedUrl, err := url.Parse(urlAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url: %w", err)
@@ -52,13 +56,11 @@ func GetReaderFromURL(ctx context.Context, urlAddress string, enableCompression 
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
 
+	// reader will be closed in ExtractInfoFromReader
 	reader, err := getReaderFromResponse(res)
 	if err != nil {
 		return nil, err
 	}
-	// defer reader.Close()
-
-	fmt.Printf("ContentEncoding: %s, proto=%s, protoMajor=%d, statusCode=%d, compressed=%t\n", res.Header.Get("Content-Encoding"), res.Proto, res.ProtoMajor, res.StatusCode, !res.Uncompressed)
 
 	return reader, nil
 }

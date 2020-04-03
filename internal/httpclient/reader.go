@@ -1,4 +1,4 @@
-package metaclient
+package httpclient
 
 import (
 	"fmt"
@@ -11,6 +11,8 @@ import (
 	"github.com/klauspost/compress/gzip"
 )
 
+// getReaderFromResponse returns the proper io.ReadCloser type according to the
+// http response Content Encoding type
 func getReaderFromResponse(res *http.Response) (io.ReadCloser, error) {
 	var (
 		err    error
@@ -36,7 +38,7 @@ func getReaderFromResponse(res *http.Response) (io.ReadCloser, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create %s reader: %w", res.Header.Get("Content-Encoding"), err)
+		return nil, fmt.Errorf("failed to create %q reader: %w", res.Header.Get("Content-Encoding"), err)
 	}
 
 	return reader, err

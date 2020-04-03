@@ -9,7 +9,7 @@ type MsgPackEncoder struct {
 }
 
 // Encode
-func (m *MsgPackEncoder) Encode(subject string, v interface{}) ([]byte, error) {
+func (m *MsgPackEncoder) Encode(_ string, v interface{}) ([]byte, error) {
 	// bb := m.bytespool.Get()
 	// err := msgpack.NewEncoder(bb).Encode(v)
 	// defer m.bytespool.Put(bb)
@@ -17,7 +17,7 @@ func (m *MsgPackEncoder) Encode(subject string, v interface{}) ([]byte, error) {
 }
 
 // Decode
-func (m *MsgPackEncoder) Decode(subject string, data []byte, vPtr interface{}) error {
+func (m *MsgPackEncoder) Decode(_ string, data []byte, vPtr interface{}) error {
 	return msgpack.Unmarshal(data, vPtr)
 	// switch arg := vPtr.(type) {
 	// case *string:
