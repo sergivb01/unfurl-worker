@@ -26,7 +26,7 @@ func main() {
 
 func sendMessage(q *queue.NATSQueue) {
 	s := time.Now()
-	res, err := q.Queue("https://sergivos.dev")
+	res, err := q.Queue("http://www.mytwogeeks.com/rsvpVideo.php")
 	if err != nil {
 		fmt.Printf("err: %s\n", err)
 		return

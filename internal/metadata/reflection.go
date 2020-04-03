@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -38,7 +39,6 @@ func registerCache(data interface{}, baseName string) {
 			registerCache(fv, field.Name+"-")
 		case reflect.Slice:
 			// TODO: implement slices for Images, Videos and Audios
-			break
 		case reflect.Struct:
 			registerCache(fv.Addr(), field.Name+"-")
 		case reflect.String:
@@ -62,7 +62,7 @@ func (m *PageInfo) updateField(name, value string) {
 	updateField(reflect.ValueOf(m).Elem(), strings.Split(args, "-"), value)
 }
 
-func updateField(v reflect.Value, args []string, value interface{}) {
+func updateField(v reflect.Value, args []string, value string) {
 	if len(args) > 1 {
 		updateField(v.FieldByName(args[0]), args[1:], value)
 		return
@@ -71,10 +71,12 @@ func updateField(v reflect.Value, args []string, value interface{}) {
 	field := v.FieldByName(args[0])
 	switch field.Type().Kind() {
 	case reflect.String:
-		field.SetString(value.(string))
+		field.SetString(value)
 		break
 	case reflect.Int:
-		field.SetInt(value.(int64))
+		if n, err := strconv.Atoi(value); err == nil {
+			field.SetInt(int64(n))
+		}
 		break
 	default:
 		// TODO: field not supported, could log?

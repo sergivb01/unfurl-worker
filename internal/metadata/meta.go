@@ -9,9 +9,9 @@ type PageInfo struct {
 	Description string `metadata:"og:description" json:"description"`
 	Locale      string `metadata:"og:locale" json:"locale"`
 	// TODO: Implement images, videos and audios
-	// Images      []OGImage
-	// Videos      []OGVideo
-	// Audios      []OGAudio
+	// Images  []OGImage
+	// Videos  []OGVideo
+	// Audios  []OGAudio
 	Twitter TwitterCard `json:"twitter"`
 }
 
