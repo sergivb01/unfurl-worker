@@ -3,10 +3,10 @@ package metadata
 type PageInfo struct {
 	Title       string `metadata:"og:title" json:"title"`
 	Type        string `metadata:"og:type" json:"type"`
-	Url         string `metadata:"og:url" json:"url"`
+	URL         string `metadata:"og:url" json:"url"`
 	Site        string `metadata:"og:site" json:"site"`
 	SiteName    string `metadata:"og:site_name" json:"site_name"`
-	Description string `metadata:"og:description" json:"description"`
+	Description string `metadata:"description,og:description" json:"description"`
 	Locale      string `metadata:"og:locale" json:"locale"`
 	// TODO: Implement images, videos and audios
 	// Images  []OGImage

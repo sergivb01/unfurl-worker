@@ -8,32 +8,30 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/sergivb01/unfurl-worker/internal/utils"
 )
 
 const compressAlgo string = "gzip, br, bzip2, deflate"
 
-var client = &http.Client{Transport: &http.Transport{
-	DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, err error) {
-		dialer := &net.Dialer{
-			Timeout: 3 * time.Second,
-		}
-		return dialer.DialContext(ctx, network, addr)
-	},
-	TLSHandshakeTimeout: 3 * time.Second,
-	// MaxIdleConns:        150,
-	// MaxIdleConnsPerHost: 150,
-	MaxIdleConns:        -1,
-	MaxIdleConnsPerHost: -1,
-	DisableKeepAlives:   true,
-	ForceAttemptHTTP2:   true,
-}}
+// TODO: move to fasthttp, I think I'm memory leaking as fuck
+func getClient() *http.Client {
+	return &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, err error) {
+			dialer := &net.Dialer{
+				Timeout: time.Millisecond * 1500, // 1.5s
+			}
+			return dialer.DialContext(ctx, network, addr)
+		},
+		TLSHandshakeTimeout: 3 * time.Second,
+		MaxIdleConns:        -1,
+		MaxIdleConnsPerHost: -1,
+		DisableKeepAlives:   true,
+		ForceAttemptHTTP2:   true,
+	}}
+}
 
 // GetReaderFromURL returns the corresponding io.ReadCloser from a website
 // according to the response type for compression
 func GetReaderFromURL(ctx context.Context, urlAddress string, enableCompression bool) (io.ReadCloser, error) {
-	defer utils.Track(utils.BenchFunc("getReaderFromURL(ctx, " + urlAddress + ")"))
 	parsedUrl, err := url.Parse(urlAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url: %w", err)
@@ -51,7 +49,7 @@ func GetReaderFromURL(ctx context.Context, urlAddress string, enableCompression 
 		req.Header.Set("Accept-Encoding", compressAlgo)
 	}
 
-	res, err := client.Do(req)
+	res, err := getClient().Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}

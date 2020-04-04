@@ -55,11 +55,9 @@ func registerCache(data interface{}, baseName string) {
 }
 
 func (m *PageInfo) updateField(name, value string) {
-	args, ok := internalReflectionCache[name]
-	if !ok {
-		return
+	if args, ok := internalReflectionCache[name]; ok {
+		updateField(reflect.ValueOf(m).Elem(), strings.Split(args, "-"), value)
 	}
-	updateField(reflect.ValueOf(m).Elem(), strings.Split(args, "-"), value)
 }
 
 func updateField(v reflect.Value, args []string, value string) {
@@ -71,16 +69,16 @@ func updateField(v reflect.Value, args []string, value string) {
 	field := v.FieldByName(args[0])
 	switch field.Type().Kind() {
 	case reflect.String:
-		field.SetString(value)
-		break
+		// don't update meta-tag if already found a valid tag
+		if field.String() != "" {
+			field.SetString(value)
+		}
 	case reflect.Int:
 		if n, err := strconv.Atoi(value); err == nil {
 			field.SetInt(int64(n))
 		}
-		break
 	default:
 		// TODO: field not supported, could log?
-		break
 	}
 	// v.FieldByName(args[0]).SetString(value)
 }

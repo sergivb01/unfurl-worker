@@ -42,7 +42,18 @@ func NewQueue(debug bool) (*NATSQueue, error) {
 		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
 
-	nc, err := nats.Connect(nats.DefaultURL)
+	q := &NATSQueue{
+		Topic: "requests",
+		log:   logger,
+	}
+
+	rawConn, err := nats.Connect(nats.DefaultURL,
+		nats.ClosedHandler(q.connHandler(CLOSED)),
+		nats.ReconnectHandler(q.connHandler(RECONNECT)),
+		nats.DiscoveredServersHandler(q.connHandler(DISCOVERED)),
+		nats.DisconnectErrHandler(q.disconnectErrHandler),
+		nats.ErrorHandler(q.errorHandler),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to nats: %w", err)
 	}
@@ -50,28 +61,24 @@ func NewQueue(debug bool) (*NATSQueue, error) {
 	nats.RegisterEncoder("msgpack", &encoder.MsgPackEncoder{})
 	logger.Info("registered msgpack encoder to nats")
 
-	c, err := nats.NewEncodedConn(nc, "msgpack")
+	encodedConn, err := nats.NewEncodedConn(rawConn, "msgpack")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create encoded connection: %w", err)
 	}
 
-	q := &NATSQueue{
-		nc:    c,
-		Topic: "requests",
-		log:   logger,
-	}
+	q.nc = encodedConn
 
 	return q, nil
 }
 
 func (q *NATSQueue) Subscribe() error {
-	pool, err := ants.NewPoolWithFunc(100, func(i interface{}) {
+	pool, err := ants.NewPoolWithFunc(15, func(i interface{}) {
 		m, ok := i.(*nats.Msg)
 		if !ok {
 			return
 		}
 		q.handleMessage(m)
-	})
+	}, ants.WithPreAlloc(true))
 	if err != nil {
 		return fmt.Errorf("failed to create ants pool: %q", err)
 	}
@@ -111,6 +118,8 @@ func (q *NATSQueue) Start() {
 }
 
 func (q *NATSQueue) Queue(url string) (*metadata.PageInfo, error) {
+	defer q.Track("Queue("+url+")", time.Now())
+
 	q.ncMutex.Lock()
 	nc := q.nc
 	q.ncMutex.Unlock()
@@ -124,12 +133,15 @@ func (q *NATSQueue) Queue(url string) (*metadata.PageInfo, error) {
 }
 
 func (q *NATSQueue) handleMessage(m *nats.Msg) {
+	defer q.Track("handleMessage("+m.Reply+")", time.Now())
+
 	var r Request
 	if err := q.nc.Enc.Decode(m.Subject, m.Data, &r); err != nil {
 		q.log.Error("error decoding message", zap.Error(err))
 		return
 	}
 
+	// TODO: use a proper context
 	reader, err := httpclient.GetReaderFromURL(context.TODO(), r.URL, true)
 	if err != nil {
 		q.log.Error("error getting reader from URL", zap.Error(err), zap.String("url", r.URL))

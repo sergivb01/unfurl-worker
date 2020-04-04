@@ -6,15 +6,12 @@ import (
 	"io"
 
 	"github.com/PuerkitoBio/goquery"
-
-	"github.com/sergivb01/unfurl-worker/internal/utils"
 )
 
 var ErrorType = errors.New("should not be non-ptr or nil")
 
 // ExtractInfoFromReader returns the page information from a response reader
 func ExtractInfoFromReader(reader io.ReadCloser) (*PageInfo, error) {
-	defer utils.Track(utils.BenchFunc("ExtractInfoFromReader(io.ReadCloser)"))
 	// TODO: handle reader close error
 	defer reader.Close()
 
@@ -25,6 +22,9 @@ func ExtractInfoFromReader(reader io.ReadCloser) (*PageInfo, error) {
 
 	// TODO: maybe some parallelism??
 	info := &PageInfo{}
+
+	info.Title = doc.Find("title").Text()
+
 	selection := doc.Find("meta[content]")
 	for i := range selection.Nodes {
 		el := selection.Eq(i)
